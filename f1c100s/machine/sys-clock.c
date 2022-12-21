@@ -89,7 +89,75 @@ static void clock_set_pll_cpu(uint32_t clk)
 	write32(F1C100S_CCU_BASE + CCU_PLL_CPU_CTRL, rval);
 	wait_pll_stable(F1C100S_CCU_BASE + CCU_PLL_CPU_CTRL);
 }
+// SD card controller clock
+static uint32_t pll_periph_get_freq(void) // +
+{
+    uint32_t reg = read32(F1C100S_CCU_BASE + CCU_PLL_PERIPH_CTRL);
 
+    uint32_t mul = (reg >> 8) & 0x1F;
+    uint32_t div = (reg >> 4) & 0x3;
+
+    return (24000000 * (mul + 1) / (div + 1));
+}
+uint32_t clk_sdc_config(uint32_t reg, uint32_t freq)
+{
+    uint32_t in_freq = 0;
+    uint32_t reg_val = (1 << 31);
+
+    if (freq <= 24000000)
+    {
+        reg_val |= (0 << 24); // OSC24M
+        in_freq = 24000000;
+    }
+    else
+    {
+        reg_val |= (1 << 24); // PLL_PERIPH
+        in_freq = pll_periph_get_freq();
+    }
+
+    uint8_t div = in_freq / freq;
+    if (in_freq % freq)
+        div++;
+
+    uint8_t prediv = 0;
+    while (div > 16)
+    {
+        prediv++;
+        if (prediv > 3)
+            return 0;
+        div = (div + 1) / 2;
+    }
+
+    /* determine delays */
+    uint8_t samp_phase = 0;
+    uint8_t out_phase = 0;
+    if (freq <= 400000)
+    {
+        out_phase = 0;
+        samp_phase = 0;
+    }
+    else if (freq <= 25000000)
+    {
+        out_phase = 0;
+        samp_phase = 5;
+    }
+    else if (freq <= 52000000)
+    {
+        out_phase = 3;
+        samp_phase = 4;
+    }
+    else /* freq > 52000000 */
+    {
+        out_phase = 1;
+        samp_phase = 4;
+    }
+    reg_val |= (samp_phase << 20) | (out_phase << 8);
+    reg_val |= (prediv << 16) | ((div - 1) << 0);
+
+    write32(F1C100S_CCU_BASE+reg, reg_val);
+
+    return in_freq / div;
+}
 void sys_clock_init(void)
 {
 	uint32_t val;
