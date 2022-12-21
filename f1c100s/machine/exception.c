@@ -23,21 +23,20 @@
  */
 #include <stdio.h>
 #include <arm32.h>
-#include <string.h>
-
+#include <printf.h>
 static void show_regs(struct arm_regs_t * regs)
 {
 	int i;
 
-	printf("pc : [<%08lx>] lr : [<%08lx>] cpsr: %08lx\r\n", regs->pc, regs->lr, regs->cpsr);
-	printf("sp : %08lx\r\n", regs->sp);
+	lprintf("pc : [<%08lx>] lr : [<%08lx>] cpsr: %08lx\r\n", regs->pc, regs->lr, regs->cpsr);
+	lprintf("sp : %08lx\r\n", regs->sp);
 	for(i = 12; i >= 0; i--)
 	{
-        printf("r%-2d: %08lx ", i, regs->r[i]);
+        lprintf("r%-2d: %08lx ", i, regs->r[i]);
 	 	if(i % 2 == 0)
-	 		printf("\r\n");
+	 		lprintf("\r\n");
 	 }
-    printf("\r\n");
+    lprintf("\r\n");
 }
 
 void arm32_do_undefined_instruction(struct arm_regs_t * regs)
@@ -64,13 +63,13 @@ void arm32_do_data_abort(struct arm_regs_t * regs)
 }
 
 _Noreturn void __fatal_error(const char *msg) {
-    printf("%s\n", msg);
+    lprintf("%s\n", msg);
     while (1);
 }
 
 #ifndef NDEBUG
 _Noreturn void __assert_func(const char *file, int line, const char *func, const char *expr) {
-    //printf("Assertion '%s' failed, at file %s:%d\n", expr, file, line);
+    //lprintf("Assertion '%s' failed, at file %s:%d\n", expr, file, line);
     __fatal_error("Assertion failed");
 }
 #endif

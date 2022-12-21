@@ -11,6 +11,7 @@ STACK_SRV_SIZE = 0x40000;
 MEMORY
 {
 	ram  : org = 0x80000000, len = 8M
+	dma  : org = 0x80800000, len = 8M
 	heap : org = 0x81000000, len = 16M
 }
 
@@ -24,12 +25,12 @@ SECTIONS
 		_build/*/obj/hw/mcu/allwinner/*/machine/start_asm.o (.text)
 		_build/*/obj/hw/mcu/allwinner/*/lib/memcpy_asm.o (.text)
 		_build/*/obj/hw/mcu/allwinner/*/lib/memset_asm.o (.text)
-		_build/*/obj/hw/mcu/allwinner/*/machine/sys-uart.o (.text*)
-		_build/*/obj/hw/mcu/allwinner/*/machine/sys-clock.o (.text*)
-		_build/*/obj/hw/mcu/allwinner/*/machine/sys-dram.o (.text*)
-		_build/*/obj/hw/mcu/allwinner/*/machine/sys-mmu.o (.text*)
-		_build/*/obj/hw/mcu/allwinner/*/machine/sys-spi-flash.o (.text*)
-		_build/*/obj/hw/mcu/allwinner/*/machine/sys-copyself.o (.text*)
+		_build/*/obj/hw/mcu/allwinner/*/machine/sys-uart.o (.text)
+		_build/*/obj/hw/mcu/allwinner/*/machine/sys-clock.o (.text)
+		_build/*/obj/hw/mcu/allwinner/*/machine/sys-dram.o (.text)
+		_build/*/obj/hw/mcu/allwinner/*/machine/sys-mmu.o (.text)
+		_build/*/obj/hw/mcu/allwinner/*/machine/sys-spi-flash.o (.text)
+		_build/*/obj/hw/mcu/allwinner/*/machine/sys-copyself.o (.text)
 		PROVIDE(__bootloader_end = .);
 	} > ram
 
@@ -114,6 +115,12 @@ SECTIONS
 		. = ALIGN(8);
 		PROVIDE(__stack_end = .);
 	} > ram
+
+  .dma ALIGN(8) (NOLOAD) :
+  {
+    PROVIDE(__dma_start = ORIGIN(dma));
+    PROVIDE(__dma_end = ORIGIN(dma) + LENGTH(dma));
+  } > dma
 
 	.heap ALIGN(8) (NOLOAD) :
 	{

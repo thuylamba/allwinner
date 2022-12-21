@@ -188,6 +188,8 @@ _copy_self:
 	ldr r1, =_main
 	mov pc, r1
 _main:
+	mov r0, #1;
+	mov r1, #0;
 	bl main
 	b _main
 
