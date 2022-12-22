@@ -89,6 +89,24 @@ static void clock_set_pll_cpu(uint32_t clk)
 	write32(F1C100S_CCU_BASE + CCU_PLL_CPU_CTRL, rval);
 	wait_pll_stable(F1C100S_CCU_BASE + CCU_PLL_CPU_CTRL);
 }
+void clk_reset_set(uint32_t reg, uint8_t bit)
+{
+    clear32(F1C100S_CCU_BASE+reg, (1 << bit));
+}
+
+void clk_reset_clear(uint32_t reg, uint8_t bit)
+{
+    set32(F1C100S_CCU_BASE+reg, (1 << bit));
+}
+void clk_enable(uint32_t reg, uint8_t bit)
+{
+    set32(F1C100S_CCU_BASE+reg, (1 << bit));
+}
+void clk_disable(uint32_t reg, uint8_t bit)
+{
+    clear32(F1C100S_CCU_BASE+reg, (1 << bit));
+}
+
 // SD card controller clock
 static uint32_t pll_periph_get_freq(void) // +
 {

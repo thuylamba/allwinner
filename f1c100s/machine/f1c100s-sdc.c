@@ -5,6 +5,7 @@
 #include "f1c100s-sdc.h"
 #include "f1c100s-gpio.h"
 #include "sys-clock.h"
+#include "printf.h"
 static uint8_t sdc_transfer_command(uint32_t sdc_base, sdc_cmd_t *cmd, sdc_data_t *dat);
 static uint8_t sdc_read_bytes(uint32_t sdc_base, uint32_t *buf, uint32_t blkcount, uint32_t blksize);
 static uint8_t sdc_write_bytes(uint32_t sdc_base, uint32_t *buf, uint32_t blkcount, uint32_t blksize);
@@ -59,16 +60,16 @@ static uint8_t sdc_transfer_command(uint32_t sdc_base, sdc_cmd_t *cmd, sdc_data_
     if (dat != NULL)
         write32(sdc_base + SDC_GCTL, read32(sdc_base + SDC_GCTL) | 0x80000000);
     write32(sdc_base + SDC_CMDR, cmdval | cmd->cmdidx);
-
+		// wait
     timeout = 10000;
     do
     {
         status = read32(sdc_base + SDC_RISR);
-        if (!timeout-- || (status & SDC_INTERRUPT_ERROR_BIT))
+        if (!timeout--	|| (status & SDC_INTERRUPT_ERROR_BIT))
         {
-            write32(sdc_base + SDC_GCTL, SDC_HARDWARE_RESET);
-            write32(sdc_base + SDC_RISR, 0xFFFFFFFF);
-            return 0;
+					//	write32(sdc_base + SDC_GCTL, SDC_HARDWARE_RESET);
+					//	write32(sdc_base + SDC_RISR, 0xFFFFFFFF);
+					return 0;
         }
     } while (!(status & SDC_COMMAND_DONE));
 
@@ -82,6 +83,7 @@ static uint8_t sdc_transfer_command(uint32_t sdc_base, sdc_cmd_t *cmd, sdc_data_
             {
                 write32(sdc_base + SDC_GCTL, SDC_HARDWARE_RESET);
                 write32(sdc_base + SDC_RISR, 0xFFFFFFFF);
+						lprintf("Thanh Debug [%s][%d]\n",__func__, __LINE__);
                 return 0;
             }
         } while (status & SDC_CARD_DATA_BUSY);
@@ -190,14 +192,16 @@ static uint8_t sdc_transfer_data(uint32_t sdc_base, sdc_cmd_t *cmd, sdc_data_t *
     write32(sdc_base + SDC_BYCR, dlen);
     if (dat->flag & MMC_DATA_READ)
     {
-        if (!sdc_transfer_command(sdc_base, cmd, dat))
+        if (!sdc_transfer_command(sdc_base, cmd, dat)) {
             return 0;
+				}
         ret = sdc_read_bytes(sdc_base, (uint32_t *)dat->buf, dat->blkcnt, dat->blksz);
     }
     else if (dat->flag & MMC_DATA_WRITE)
     {
-        if (!sdc_transfer_command(sdc_base, cmd, dat))
+        if (!sdc_transfer_command(sdc_base, cmd, dat)) {
             return 0;
+				}
         ret = sdc_write_bytes(sdc_base, (uint32_t *)dat->buf, dat->blkcnt, dat->blksz);
     }
     return ret;
