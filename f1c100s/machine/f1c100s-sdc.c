@@ -12,6 +12,8 @@ static uint8_t sdc_write_bytes(uint32_t sdc_base, uint32_t *buf, uint32_t blkcou
 static uint8_t sdc_transfer_data(uint32_t sdc_base, sdc_cmd_t *cmd, sdc_data_t *dat);
 static uint8_t sdc_update_clock(uint32_t sdc_base);
 
+#define SDC_TIMEOUT_MAX	1000000
+
 static uint8_t sdc_transfer_command(uint32_t sdc_base, sdc_cmd_t *cmd, sdc_data_t *dat)
 {
     uint32_t cmdval = SDC_START;
@@ -20,7 +22,7 @@ static uint8_t sdc_transfer_command(uint32_t sdc_base, sdc_cmd_t *cmd, sdc_data_
 
     if (cmd->cmdidx == MMC_STOP_TRANSMISSION)
     {
-        timeout = 10000;
+        timeout = SDC_TIMEOUT_MAX;
         do
         {
             status = read32(sdc_base + SDC_STAR);
@@ -61,21 +63,21 @@ static uint8_t sdc_transfer_command(uint32_t sdc_base, sdc_cmd_t *cmd, sdc_data_
         write32(sdc_base + SDC_GCTL, read32(sdc_base + SDC_GCTL) | 0x80000000);
     write32(sdc_base + SDC_CMDR, cmdval | cmd->cmdidx);
 		// wait
-    timeout = 10000;
+    timeout = SDC_TIMEOUT_MAX;
     do
     {
         status = read32(sdc_base + SDC_RISR);
         if (!timeout--	|| (status & SDC_INTERRUPT_ERROR_BIT))
         {
-					//	write32(sdc_base + SDC_GCTL, SDC_HARDWARE_RESET);
-					//	write32(sdc_base + SDC_RISR, 0xFFFFFFFF);
+					write32(sdc_base + SDC_GCTL, SDC_HARDWARE_RESET);
+					write32(sdc_base + SDC_RISR, 0xFFFFFFFF);
 					return 0;
         }
     } while (!(status & SDC_COMMAND_DONE));
 
     if (cmd->resptype & MMC_RESP_BUSY)
     {
-        timeout = 10000;
+        timeout = SDC_TIMEOUT_MAX;
         do
         {
             status = read32(sdc_base + SDC_STAR);
@@ -83,7 +85,6 @@ static uint8_t sdc_transfer_command(uint32_t sdc_base, sdc_cmd_t *cmd, sdc_data_
             {
                 write32(sdc_base + SDC_GCTL, SDC_HARDWARE_RESET);
                 write32(sdc_base + SDC_RISR, 0xFFFFFFFF);
-						lprintf("Thanh Debug [%s][%d]\n",__func__, __LINE__);
                 return 0;
             }
         } while (status & SDC_CARD_DATA_BUSY);
