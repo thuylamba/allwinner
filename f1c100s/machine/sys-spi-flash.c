@@ -202,3 +202,42 @@ void sys_spi_flash_read(int addr, void * buf, int count)
 	sys_spi_write_then_read(tx, 4, buf, count);
 	sys_spi_deselect();
 }
+void sys_spi_flash_write_enable(void)
+{
+	sys_spi_select();
+	uint8_t cmd = 0x06;
+	sys_spi_transfer(&cmd, NULL, 1);
+	sys_spi_deselect();
+}
+void sys_spi_flash_wait_ready(void)
+{
+	uint8_t flash_state = 0;
+	uint8_t cmd = 0x05;
+
+	sys_spi_select();
+	sys_spi_transfer(&cmd, NULL, 1);
+	sys_spi_transfer(NULL, &flash_state, 1);
+	while (flash_state&0x01)
+	{
+		sys_spi_transfer(NULL, &flash_state, 1);
+	}
+	sys_spi_deselect();
+}
+void sys_spi_flash_write(int addr, void * data, int cnt)
+{
+	uint8_t tx[4];
+
+	tx[0] = 0x02;
+	tx[1] = (uint8_t)(addr >> 16);
+	tx[2] = (uint8_t)(addr >> 8);
+	tx[3] = (uint8_t)(addr >> 0);
+
+	sys_spi_flash_wait_ready();
+
+	sys_spi_flash_write_enable();
+
+	sys_spi_select();
+	sys_spi_transfer(tx, NULL, 4);
+	sys_spi_transfer(data, NULL, cnt);
+	sys_spi_deselect();
+}
